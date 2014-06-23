@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Data.SqlClient;
+using System.Linq;
 using ExportProcess.Utilities;
 
 namespace ExportProcess.ESpeed
@@ -27,18 +27,18 @@ namespace ExportProcess.ESpeed
         #region Methods
         public static Records GetRecords(Criteria criteria)
         {
-            Data data = new Data();
+            var data = new Data();
             return data.GetRecords(criteria);
         }
 
 
         public string GenerateOutput(bool appendHeader)
         {
-            if (ESpeedRecords == null || ESpeedRecords.Count == 0) return string.Empty;
+            if (ESpeedRecords == null || ESpeedRecords.Count == 0 || !ESpeedRecords.Any(c => c.IsValid())) return string.Empty;
             var sb = new System.Text.StringBuilder();
             if (appendHeader)
                 sb.AppendFormat("\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\"{6}", "JECO Claim Number", "JECO DCN", "Claimant Last", "Date of Loss", "Date Submitted", "Source Name", "\r\n");
-            foreach (var record in ESpeedRecords)
+            foreach (var record in ESpeedRecords.Where(c => c.IsValid()))
             {
                 sb.Append(record);
             }
@@ -57,14 +57,12 @@ namespace ExportProcess.ESpeed
 
         public void AddSourceFilesToZipArchive(string fileName)
         {
-            
+
             List<Record> badFiles = null;
             var zipFile = new Ionic.Zip.ZipFile(fileName);
             try
             {
-
-
-                foreach (var record in ESpeedRecords)
+                foreach (var record in ESpeedRecords.Where(c => c.IsValid()))
                 {
 
                     if (!System.IO.File.Exists(record.Pointertosource))
@@ -74,9 +72,13 @@ namespace ExportProcess.ESpeed
                     }
                     else
                     {
-                        //zipFile.AddEntry(record.FileName, System.IO.File.ReadAllBytes(record.Pointertosource));
-                        //var fileName = string.Format("{0}_{1}.tif", record.IdxClaimNumber.ToString(), record.IdxRxBillId);
-                        zipFile.AddEntry(record.FileName, System.IO.File.ReadAllBytes(record.Pointertosource));
+                        byte[] fileContents = null;
+                        if (record.FileName.IsTiff())
+                            fileContents = TiffConversion.ConvertTiff(record.FileName);
+                        else
+                            fileContents = System.IO.File.ReadAllBytes(record.Pointertosource);
+
+                        zipFile.AddEntry(record.FileName, fileContents);
                     }
                     FileCopiedEventHandler(this, EventArgs.Empty);
 
@@ -122,14 +124,16 @@ namespace ExportProcess.ESpeed
 
         public void UpdateStatus()
         {
-            if (this.ESpeedRecords != null && this.ESpeedRecords.Count > 0)
-                foreach (var record in this.ESpeedRecords)
-                {
-                    record.SetStatus(Types.DocStatusTypes.HealthE_Sent);
+            if (ESpeedRecords == null || ESpeedRecords.Count <= 0) return;
 
-                }
 
+            foreach (var record in ESpeedRecords.Where(c=>c.IsValid()))
+            {
+                record.SetStatus(Types.DocStatusTypes.HealthE_Sent);
+
+            }
         }
+
         #endregion //Methods
 
         #region DAL
@@ -138,8 +142,8 @@ namespace ExportProcess.ESpeed
 
             public Records GetRecords(Criteria criteria)
             {
-                Records result = null;
-                using (SqlConnection cn = new SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["espeed"].ConnectionString))
+                var result = new Records();
+                using (var cn = new SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["espeed"].ConnectionString))
                 {
                     cn.Open();
                     SqlCommand cmd = cn.CreateCommand();
@@ -155,7 +159,6 @@ namespace ExportProcess.ESpeed
 
                     while (dr.Read())
                     {
-                        if (result == null) result = new Records();
                         if (result.ESpeedRecords == null) result.ESpeedRecords = new List<Record>();
                         result.ESpeedRecords.Add(new Record(dr));
                     }

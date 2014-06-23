@@ -149,5 +149,17 @@ namespace ExportProcess.Utilities
             sw.Flush();
             sw.Close();
         }
+
+        public static bool IsTiff(this string fileName)
+        {
+            if (!Path.HasExtension(fileName)) return false;
+            var extension = Path.GetExtension(fileName);
+            if (string.IsNullOrEmpty(extension)) return false;
+            extension = extension.ToLower();
+
+            if (extension == "tif" || extension == "tiff") return true;
+            return false;
+
+        }
     }
 }

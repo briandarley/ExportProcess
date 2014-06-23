@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Data.SqlClient;
 using ExportProcess.Utilities;
 
@@ -350,15 +348,15 @@ namespace ExportProcess.ESpeed
         {
             //"JECO Claim Number", "JECO DCN", "Claimant Last", "Date of Loss", "Date Submitted", "Source Name"
             //string sourceName = String.Format("{0}_{1}", IdxClaimNumber, IdxRxBillId) + ".tif";
-            return string.Format("\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\"\r\n", 
+            return string.Format("\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\"\r\n",
                 IdxClaimNumber,
-                IdxRxBillId, 
-                IdxClmntLastName, 
+                IdxRxBillId,
+                IdxClmntLastName,
                 IdxLossDate.ToString("MM/dd/yyyy"),
-                IdxReceivedDt.ToString("MM/dd/yyyy"), 
+                IdxReceivedDt.ToString("MM/dd/yyyy"),
                 FileName);
 
-            
+
         }
 
         internal void SetStatus(Types.DocStatusTypes status)
@@ -367,6 +365,20 @@ namespace ExportProcess.ESpeed
             Data data = new Data();
             data.UpdateStatus(new Criteria(this.Objectid, this.IdxDocStatus.ConvertToEnum<Types.DocStatusTypes>()));
         }
+
+
+        public bool IsValid()
+        {
+            //Check DCN 
+            if (string.IsNullOrEmpty(IdxRxBillId))
+            {
+                return false;
+            }
+
+
+            return true;
+        }
+
         #endregion //Methods
 
         private class Criteria
@@ -387,15 +399,17 @@ namespace ExportProcess.ESpeed
             public void UpdateStatus(Criteria criteria)
             {
 
-                using (SqlConnection cn = new SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["espeed"].ConnectionString))
+                using (var cn = new SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["espeed"].ConnectionString))
                 {
                     cn.Open();
-                    SqlCommand cmd = cn.CreateCommand();
+                    var cmd = cn.CreateCommand();
 
-                    string sql = "update _obj_2 set IDX_DOC_STATUS = @IDXDocStatus where objectid = @ObjectId";
+                    const string sql = "update _obj_2 set IDX_DOC_STATUS = @IDXDocStatus where objectid = @ObjectId";
                     cmd.CommandText = sql;
-                    cmd.Parameters.AddWithValue("@IDXDocStatus", criteria.IDXDocStatus.Value.GetDescription());
-                    cmd.Parameters.AddWithValue("@ObjectId", criteria.ObjectId.Value);
+                    if (criteria.IDXDocStatus.HasValue)
+                        cmd.Parameters.AddWithValue("@IDXDocStatus", criteria.IDXDocStatus.Value.GetDescription());
+                    if (criteria.ObjectId.HasValue)
+                        cmd.Parameters.AddWithValue("@ObjectId", criteria.ObjectId.Value);
 
                     cmd.ExecuteNonQuery();
                 }

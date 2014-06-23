@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration;
+using System.Linq;
 using System.Net;
 using System.Text;
 using Jscape.Ftp;
@@ -10,6 +11,10 @@ namespace ExportProcess
     {
         static void Main(string[] args)
         {
+            //var test = new TestTiffConverter();
+            //test .TestConvertTiffImage();
+            //return;
+
             try
             {
 
@@ -19,29 +24,40 @@ namespace ExportProcess
 
                 if (records != null && records.ESpeedRecords != null)
                 {
-                    records.FileCopiedEventHandler += OnFileCopied;
+                    if (records.ESpeedRecords.Any(c => c.IsValid()))
+                    {
+                        
 
-                    var recordCount = records.ESpeedRecords.Count.ToString().PadLeft(5, '0');
+                        records.FileCopiedEventHandler += OnFileCopied;
 
-                    var zipFile = GetZipFileName(recordCount);
+                        var recordCount = records.ESpeedRecords.Count(c => c.IsValid()).ToString().PadLeft(5, '0');
+                        var zipFile = GetZipFileName(recordCount);
 
-                    Console.WriteLine("Adding records to ziped file");
-                    AddRecordsToZipFile(records, zipFile);
+                        Console.WriteLine("Adding records to zipped file");
+                        AddRecordsToZipFile(records, zipFile);
 
-                    Console.WriteLine("Adding control file to zip file");
-                    AddSourceControlFileToZipFile(records, zipFile);
+                        Console.WriteLine("Adding control file to zip file");
+                        AddSourceControlFileToZipFile(records, zipFile);
 
-                    Console.WriteLine("Submitting zipped file to FTP");
-                    SubmitZipFileToVendorViaFtp(zipFile);
-
-
-                    Console.WriteLine("Committing changes to database");
-
-                    records.UpdateStatus();
+                        Console.WriteLine("Submitting zipped file to FTP");
+                        SubmitZipFileToVendorViaFtp(zipFile);
 
 
-                    SendCompleteNotification();
+                        Console.WriteLine("Committing changes to database");
 
+                        records.UpdateStatus();
+
+
+                        SendCompleteNotification();
+
+
+                        SubmitInvalidFileLog(records);
+                    }
+                    else
+                    {
+                        Console.WriteLine("No valid records to submit");
+
+                    }
                     Console.WriteLine("\nDone copying files");
                 }
                 else
@@ -58,24 +74,11 @@ namespace ExportProcess
 
         }
 
-      
-
-        private static void TestFTPConnection()
-        {
-            var ftp = RetrieveInitializedFtpObject();
-            ftp.Connect();
-            //ftp.DownloadDir(ConfigurationManager.AppSettings["FTPDestinationFolder"]);
-
-            ftp.RemoteDir = ConfigurationManager.AppSettings["FTPDestinationFolder"];
-            ftp.LocalDir = @"c:\temp\";
-
-            ftp.Upload(@"test.txt");
+     
 
 
-            ftp.Disconnect();
-            ftp.DebugStream.Close();
 
-        }
+
 
 
 
@@ -171,22 +174,40 @@ namespace ExportProcess
 
 
             SendEmailNotification("Failure - FTP process to HealthESystems ",
-                  sb.ToString()); 
-   
+                  sb.ToString());
+
 
         }
-        
+
         private static void SendCompleteNotification()
         {
             SendEmailNotification("HealthESystems Success",
                 "File successfully submitted to HealthESystems");
         }
 
+        private static void SubmitInvalidFileLog(ESpeed.Records records)
+        {
+            if (records.ESpeedRecords.All(c => c.IsValid())) return;
+            var sb = new StringBuilder();
+            sb.Append("The following records are invalid and could not be sent");
+            sb.Append("\n");
+            sb.AppendFormat("{0}\t\t\t\t{1}", "Claim Number", "DCN");
+            sb.Append("\n");
+            foreach (var eSpeedRecord in records.ESpeedRecords)
+            {
+                sb.AppendFormat("{0}\t\t\t{1}", eSpeedRecord.IdxClaimNumber, 
+                    (string.IsNullOrEmpty(eSpeedRecord.IdxRxBillId) ? "Missing DCN (IdxRxBillId)": eSpeedRecord.IdxRxBillId));
+                sb.Append("\n");
+            }
+
+            SendEmailNotification("HealthESystems Invalid files", sb.ToString());
+        }
+
         private static void SendEmailNotification(string subject, string messageBody)
         {
             var smtp = new System.Net.Mail.SmtpClient("shire")
-                         { 
-                             Credentials = new NetworkCredential(ConfigurationManager.AppSettings["emailAuthenPWD"],ConfigurationManager.AppSettings["emailAuthenUID"])
+                         {
+                             Credentials = new NetworkCredential(ConfigurationManager.AppSettings["emailAuthenPWD"], ConfigurationManager.AppSettings["emailAuthenUID"])
                          };
             var msg = new System.Net.Mail.MailMessage
                       {
@@ -207,6 +228,25 @@ namespace ExportProcess
 
         }
 
+
+        private static void TestFtpConnection()
+        {
+            var ftp = RetrieveInitializedFtpObject();
+            ftp.Connect();
+            //ftp.DownloadDir(ConfigurationManager.AppSettings["FTPDestinationFolder"]);
+
+            ftp.RemoteDir = ConfigurationManager.AppSettings["FTPDestinationFolder"];
+            ftp.LocalDir = @"c:\temp\";
+
+            ftp.Upload(@"test.txt");
+
+
+            ftp.Disconnect();
+            ftp.DebugStream.Close();
+
+        }
     }
+
+
 }
 
