@@ -238,7 +238,7 @@ namespace ExportProcess
             ftp.RemoteDir = ConfigurationManager.AppSettings["FTPDestinationFolder"];
             ftp.LocalDir = @"c:\temp\";
 
-            ftp.Upload(@"test.txt");
+            ftp.Upload(@"test.txt"); 
 
 
             ftp.Disconnect();

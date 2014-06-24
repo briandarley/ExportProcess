@@ -24,7 +24,7 @@ namespace ExportProcess.ESpeed
 
         #endregion //Criteria
 
-        #region Methods
+        #region Methods 
         public static Records GetRecords(Criteria criteria)
         {
             var data = new Data();

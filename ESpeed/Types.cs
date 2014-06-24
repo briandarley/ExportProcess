@@ -13,7 +13,7 @@ namespace ExportProcess.ESpeed
             [Description("HealthE_Waiting")] HealthE_Waiting,
             [Description("HealthE_Sent")] HealthE_Sent,
             [Description("Process Started")] ProcessStarted,
-            [Description("Rx Review")] RxReview
+            [Description("Rx Review")] RxReview 
             
         }
     }

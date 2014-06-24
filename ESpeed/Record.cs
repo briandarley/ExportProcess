@@ -349,7 +349,7 @@ namespace ExportProcess.ESpeed
             //"JECO Claim Number", "JECO DCN", "Claimant Last", "Date of Loss", "Date Submitted", "Source Name"
             //string sourceName = String.Format("{0}_{1}", IdxClaimNumber, IdxRxBillId) + ".tif";
             return string.Format("\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\"\r\n",
-                IdxClaimNumber,
+                IdxClaimNumber, 
                 IdxRxBillId,
                 IdxClmntLastName,
                 IdxLossDate.ToString("MM/dd/yyyy"),

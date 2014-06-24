@@ -135,7 +135,7 @@ namespace ExportProcess.Utilities
                     return writer.ToString();
                 }
             }
-        }
+        } 
 
         public static void SaveToFile(this string fileContents, string path, string fileName, bool appendToFile)
         {
