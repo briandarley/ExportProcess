@@ -131,13 +131,13 @@ namespace ExportProcess
         {
             //Secure FTP Factory for .NET:Single Developer:Registered User:01-01-3999:I5eiUi3WpB4FspHQ5uOlKRh2eabOrFtcMbh74FmX/UzFUolDU9f5hbostB6xBnB9Xq8sNOFDx7jmiPkXbKhpZw4k0sWKlSywRceV4ir8csHWdBYdmFkrOSY+eYgjp+ud9GsP+m8sO1dun1qlzBMW87Fkpsmgbs88W7USXkMBl/U=
 
-            var host = ConfigurationManager.AppSettings["FTPAddress"];
-            var user = ConfigurationManager.AppSettings["FTPUserId"];
-            var pwd = ConfigurationManager.AppSettings["FTPPassword"];
+            var host = ConfigurationManager.AppSettings["FTP:Address"];
+            var user = ConfigurationManager.AppSettings["FTP:UserId"];
+            var pwd = ConfigurationManager.AppSettings["FTP:Password"];
 
             var ftp = new Ftp(host, user, pwd)
                       {
-                          LicenseKey = ConfigurationManager.AppSettings["FTPLicenseKey"],
+                          LicenseKey = ConfigurationManager.AppSettings["FTP:SFTP_License"],
                           ConnectionType = Ftp.DEFAULT,
                           Debug = DebugFtp()
 
@@ -153,7 +153,7 @@ namespace ExportProcess
 
         private static bool DebugFtp()
         {
-            return (ConfigurationManager.AppSettings["FTPDebug"] == "true" ? true : false);
+            return (ConfigurationManager.AppSettings["FTP:Debug"] == "true" ? true : false);
         }
 
         private static void SendErrorNotification(Exception exception)
