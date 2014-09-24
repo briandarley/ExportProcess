@@ -270,15 +270,10 @@ namespace ExportProcess.ESpeed
         {
             get
             {
-                return string.Format("{0}_{1}.tif", IdxClaimNumber.ToString(), IdxRxBillId.ToString());
+                return string.Format("{0}_{1}.tif", IdxClaimNumber, IdxRxBillId);
             }
         }
-        //{
-        //    get
-        //    {
-        //        //return String.Format("{0}_{1}", IdxClaimNumber, IdxBillId) + ".tif";
-        //    }
-        //}
+
         #endregion //properties
 
         #region constructors
@@ -361,7 +356,7 @@ namespace ExportProcess.ESpeed
 
         internal void SetStatus(Types.DocStatusTypes status)
         {
-            IdxDocStatus = status.GetDescription<Types.DocStatusTypes>();
+            IdxDocStatus = status.GetDescription();
             Data data = new Data();
             data.UpdateStatus(new Criteria(this.Objectid, this.IdxDocStatus.ConvertToEnum<Types.DocStatusTypes>()));
         }

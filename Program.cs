@@ -48,7 +48,7 @@ namespace ExportProcess
                         records.UpdateStatus();
 
 
-                        SendCompleteNotification();
+                        SendCompleteNotification(zipFile);
 
 
                         SubmitInvalidFileLog(records);
@@ -179,10 +179,10 @@ namespace ExportProcess
 
         }
 
-        private static void SendCompleteNotification()
+        private static void SendCompleteNotification(string zipFile)
         {
             SendEmailNotification("HealthESystems Success",
-                "File successfully submitted to HealthESystems");
+                string.Format("File successfully submitted to HealthESystems - File {0}", zipFile));
         }
 
         private static void SubmitInvalidFileLog(ESpeed.Records records)
@@ -245,6 +245,8 @@ namespace ExportProcess
             ftp.DebugStream.Close();
 
         }
+
+      
     }
 
 
