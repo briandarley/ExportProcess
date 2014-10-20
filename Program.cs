@@ -183,6 +183,8 @@ namespace ExportProcess
         {
             SendEmailNotification("HealthESystems Success",
                 string.Format("File successfully submitted to HealthESystems - File {0}", zipFile));
+
+            
         }
 
         private static void SubmitInvalidFileLog(ESpeed.Records records)

@@ -75,7 +75,7 @@ namespace ExportProcess.Utilities
             // specify the page number
             destinationFile.SetField(TiffTag.PAGENUMBER, pageNumber, totalPages);
 
-            for (int j = 0; j < height; ++j)
+            for (var j = 0; j < height; ++j)
                 destinationFile.WriteScanline(buffer[j], j);
 
 

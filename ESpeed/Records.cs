@@ -27,8 +27,7 @@ namespace ExportProcess.ESpeed
         #region Methods 
         public static Records GetRecords(Criteria criteria)
         {
-            var data = new Data();
-            return data.GetRecords(criteria);
+          return Data.GetRecords(criteria);
         }
 
 
@@ -72,11 +71,7 @@ namespace ExportProcess.ESpeed
                     }
                     else
                     {
-                        byte[] fileContents = null;
-                        if (record.FileName.IsTiff())
-                            fileContents = TiffConversion.ConvertTiff(record.FileName);
-                        else
-                            fileContents = System.IO.File.ReadAllBytes(record.Pointertosource);
+                        var fileContents = record.FileName.IsTiff() ? TiffConversion.ConvertTiff(record.Pointertosource) : System.IO.File.ReadAllBytes(record.Pointertosource);
 
                         zipFile.AddEntry(record.FileName, fileContents);
                     }
@@ -112,14 +107,10 @@ namespace ExportProcess.ESpeed
                 FileCopiedEventHandler(this, EventArgs.Empty);
             }
 
-            if (badFiles != null)
-            {
-                foreach (var record in badFiles)
-                    ESpeedRecords.Remove(record);
+            if (badFiles == null) return;
 
-
-            }
-
+            foreach (var record in badFiles)
+                ESpeedRecords.Remove(record);
         }
 
         public void UpdateStatus()
@@ -137,25 +128,25 @@ namespace ExportProcess.ESpeed
         #endregion //Methods
 
         #region DAL
-        private class Data
-        {
 
-            public Records GetRecords(Criteria criteria)
+        internal class Data
+        {
+            public static Records GetRecords(Criteria criteria)
             {
                 var result = new Records();
                 using (var cn = new SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["espeed"].ConnectionString))
                 {
                     cn.Open();
-                    SqlCommand cmd = cn.CreateCommand();
+                    var cmd = cn.CreateCommand();
 
-                    string sql = "select * from _obj_2 "
-                                + " where IDX_DOC_STATUS = @IDX_DOC_STATUS and status != 'X' ";
+                    const string sql = "select * from _obj_2 "
+                                       + " where IDX_DOC_STATUS = @IDX_DOC_STATUS and status != 'X' ";
                     cmd.CommandText = sql;
                     cmd.Parameters.AddWithValue("@IDX_DOC_STATUS", criteria.DocStatus.GetDescription());
 
 
 
-                    SqlDataReader dr = cmd.ExecuteReader();
+                    var dr = cmd.ExecuteReader();
 
                     while (dr.Read())
                     {

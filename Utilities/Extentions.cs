@@ -107,12 +107,12 @@ namespace ExportProcess.Utilities
         }
         public static string GetDescription<T>(this T source)
         {
-            FieldInfo fi = source.GetType().GetField(source.ToString());
+            var fi = source.GetType().GetField(source.ToString());
 
             var attributes = (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
 
             if (attributes != null && attributes.Length > 0) return attributes[0].Description;
-            else return source.ToString();
+            return source.ToString();
         }
 
 
@@ -139,12 +139,12 @@ namespace ExportProcess.Utilities
 
         public static void SaveToFile(this string fileContents, string path, string fileName, bool appendToFile)
         {
-            if (!System.IO.Directory.Exists(path))
+            if (!Directory.Exists(path))
             {
-                System.IO.Directory.CreateDirectory(path);
+                Directory.CreateDirectory(path);
             }
 
-            System.IO.StreamWriter sw = new System.IO.StreamWriter(System.IO.Path.Combine(path, fileName), appendToFile);
+            var sw = new StreamWriter(Path.Combine(path, fileName), appendToFile);
             sw.Write(fileContents);
             sw.Flush();
             sw.Close();
@@ -157,9 +157,9 @@ namespace ExportProcess.Utilities
             if (string.IsNullOrEmpty(extension)) return false;
             extension = extension.ToLower();
 
-            if (extension == "tif" || extension == "tiff") return true;
-            return false;
+            extension = System.Text.RegularExpressions.Regex.Replace(extension, @"^\.", "");
 
+            return extension == "tif" || extension == "tiff";
         }
     }
 }
