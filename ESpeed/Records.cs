@@ -71,7 +71,9 @@ namespace ExportProcess.ESpeed
                     }
                     else
                     {
-                        var fileContents = record.FileName.IsTiff() ? TiffConversion.ConvertTiff(record.Pointertosource) : System.IO.File.ReadAllBytes(record.Pointertosource);
+                        var fileContents = record.Pointertosource.IsTiff() 
+                            ? TiffConversion.ConvertTiff(record.Pointertosource) 
+                            : System.IO.File.ReadAllBytes(record.Pointertosource);
 
                         zipFile.AddEntry(record.FileName, fileContents);
                     }

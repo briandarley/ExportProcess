@@ -357,21 +357,15 @@ namespace ExportProcess.ESpeed
         internal void SetStatus(Types.DocStatusTypes status)
         {
             IdxDocStatus = status.GetDescription();
-            Data data = new Data();
-            data.UpdateStatus(new Criteria(this.Objectid, this.IdxDocStatus.ConvertToEnum<Types.DocStatusTypes>()));
+            var data = new Data();
+            data.UpdateStatus(new Criteria(Objectid, IdxDocStatus.ConvertToEnum<Types.DocStatusTypes>()));
         }
 
 
         public bool IsValid()
         {
             //Check DCN 
-            if (string.IsNullOrEmpty(IdxRxBillId))
-            {
-                return false;
-            }
-
-
-            return true;
+            return !string.IsNullOrEmpty(IdxRxBillId);
         }
 
         #endregion //Methods

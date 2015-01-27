@@ -18,10 +18,10 @@ namespace ExportProcess
             try
             {
 
-                var records = ESpeed.Records.GetRecords(new ESpeed.Records.Criteria(ESpeed.Types.DocStatusTypes.HealthE_Waiting));
-
-
-
+                var records = ESpeed.Records.GetRecords(new ESpeed.Records.Criteria(ESpeed.Types.DocStatusTypes.HealthE_Sent));
+                
+                var count = 0;
+                var testing = true;
                 if (records != null && records.ESpeedRecords != null)
                 {
                     if (records.ESpeedRecords.Any(c => c.IsValid()))
@@ -45,6 +45,11 @@ namespace ExportProcess
 
                         Console.WriteLine("Committing changes to database");
 
+                      
+                        if (!testing)
+                        {
+                            
+                       
                         records.UpdateStatus();
 
 
@@ -52,6 +57,7 @@ namespace ExportProcess
 
 
                         SubmitInvalidFileLog(records);
+                        }
                     }
                     else
                     {
