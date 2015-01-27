@@ -48,6 +48,8 @@ namespace ExportProcess.Utilities
             var samplesPerPixel = sourceFile.GetField(TiffTag.SAMPLESPERPIXEL)[0].ToInt();
             var bitsPerSample = sourceFile.GetField(TiffTag.BITSPERSAMPLE)[0].ToInt();
             var photo = sourceFile.GetField(TiffTag.PHOTOMETRIC)[0].ToInt();
+            var xresolution = sourceFile.GetField(TiffTag.XRESOLUTION)[0].ToInt();
+            var yresolution = sourceFile.GetField(TiffTag.YRESOLUTION)[0].ToInt();
 
             var scanlineSize = sourceFile.ScanlineSize();
             var buffer = new byte[height][];
@@ -57,7 +59,7 @@ namespace ExportProcess.Utilities
                 sourceFile.ReadScanline(buffer[i], i);
             }
 
-
+            destinationFile.SetDirectory(0);
             destinationFile.SetField(TiffTag.IMAGEWIDTH, width);
             destinationFile.SetField(TiffTag.IMAGELENGTH, height);
             destinationFile.SetField(TiffTag.SAMPLESPERPIXEL, samplesPerPixel);
@@ -66,6 +68,9 @@ namespace ExportProcess.Utilities
             destinationFile.SetField(TiffTag.PHOTOMETRIC, photo);
             destinationFile.SetField(TiffTag.PLANARCONFIG, PlanarConfig.CONTIG);
             destinationFile.SetField(TiffTag.COMPRESSION, Compression.CCITT_T6);
+            destinationFile.SetField(TiffTag.XRESOLUTION, xresolution);
+            destinationFile.SetField(TiffTag.YRESOLUTION, yresolution);
+
             // change orientation of the image
             //output.SetField(TiffTag.ORIENTATION, Orientation.RIGHTBOT);
             destinationFile.SetField(TiffTag.SAMPLESPERPIXEL, 1);
@@ -75,11 +80,13 @@ namespace ExportProcess.Utilities
             // specify the page number
             destinationFile.SetField(TiffTag.PAGENUMBER, pageNumber, totalPages);
 
+            
+
             for (var j = 0; j < height; ++j)
                 destinationFile.WriteScanline(buffer[j], j);
 
 
-            destinationFile.WriteDirectory();
+            destinationFile.RewriteDirectory();
 
         }
 
