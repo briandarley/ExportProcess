@@ -1,4 +1,6 @@
 ﻿using System.IO;
+using Aspose.Pdf;
+using Aspose.Pdf.Devices;
 using BitMiracle.LibTiff.Classic;
 
 namespace ExportProcess.Utilities
@@ -6,20 +8,20 @@ namespace ExportProcess.Utilities
     public class TiffConversion
     {
 
-        public static byte[] ConvertTiff(string sourceFile)
+        public static byte[] ExtractMultiTiffDocumentsToByteArray(string sourceFile)
         {
             using (var ms = new MemoryStream())
             {
-                
+
                 var ts = new TiffStream();
-                
+
                 using (var input = Tiff.Open(sourceFile, "r"))
                 {
                     var totalPages = input.NumberOfDirectories();
                     var pageNumber = 0;
                     using (var output = Tiff.ClientOpen("someName", Constants.LibTiff.FileMode.Write, ms, ts))
                     {
-                         
+
                         do
                         {
                             AddPageToTiff(input, output, pageNumber, totalPages);
@@ -80,7 +82,7 @@ namespace ExportProcess.Utilities
             // specify the page number
             destinationFile.SetField(TiffTag.PAGENUMBER, pageNumber, totalPages);
 
-            
+
 
             for (var j = 0; j < height; ++j)
                 destinationFile.WriteScanline(buffer[j], j);
@@ -90,5 +92,39 @@ namespace ExportProcess.Utilities
 
         }
 
+
+
+        public static byte[] ConvertPdfToByteArray(string sourceFile)
+        {
+            new License().SetLicense("Aspose.Total.lic");
+            var pdfDocument = new Document(sourceFile);
+
+            // Create Resolution object
+            var resolution = new Resolution(150);
+
+            // Create TiffSettings object
+            var tiffSettings = new TiffSettings
+                               {
+                                   Compression = CompressionType.CCITT4,
+                                   Depth = ColorDepth.Default,
+                                   Shape = ShapeType.Portait,
+                                   SkipBlankPages = false
+                               };
+
+            // Create TIFF device
+            var tiffDevice = new TiffDevice(resolution, tiffSettings);
+            
+
+            byte[] results = null;
+            using (var mem = new MemoryStream())
+            {
+                tiffDevice.Process(pdfDocument, mem);
+                mem.Position = 0;
+                results = mem.ToArray();
+            }
+
+            return results;
+            
+        }
     }
 }

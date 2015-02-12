@@ -274,6 +274,8 @@ namespace ExportProcess.ESpeed
             }
         }
 
+        public bool IsMock { get; set; }
+
         #endregion //properties
 
         #region constructors
@@ -356,6 +358,7 @@ namespace ExportProcess.ESpeed
 
         internal void SetStatus(Types.DocStatusTypes status)
         {
+            if (IsMock) return;
             IdxDocStatus = status.GetDescription();
             var data = new Data();
             data.UpdateStatus(new Criteria(Objectid, IdxDocStatus.ConvertToEnum<Types.DocStatusTypes>()));
@@ -387,7 +390,7 @@ namespace ExportProcess.ESpeed
         {
             public void UpdateStatus(Criteria criteria)
             {
-
+                
                 using (var cn = new SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["espeed"].ConnectionString))
                 {
                     cn.Open();

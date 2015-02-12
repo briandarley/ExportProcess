@@ -1,9 +1,16 @@
 ﻿using System;
 using System.Configuration;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using Aspose.Pdf;
+using Aspose.Pdf.Devices;
+using ExportProcess.ESpeed;
+using ExportProcess.Utilities;
 using Jscape.Ftp;
+
+
 
 namespace ExportProcess
 {
@@ -11,23 +18,15 @@ namespace ExportProcess
     {
         static void Main(string[] args)
         {
-            //var test = new TestTiffConverter();
-            //test .TestConvertTiffImage();
-            //return;
-
             try
             {
-
-                var records = ESpeed.Records.GetRecords(new ESpeed.Records.Criteria(ESpeed.Types.DocStatusTypes.HealthE_Sent));
+                //var records = Records.GetRecords(new Records.MockCriteria(Types.DocStatusTypes.HealthE_Waiting));
+                var records = Records.GetRecords(new Records.Criteria(Types.DocStatusTypes.HealthE_Waiting));
                 
-                var count = 0;
-                var testing = true;
                 if (records != null && records.ESpeedRecords != null)
                 {
                     if (records.ESpeedRecords.Any(c => c.IsValid()))
                     {
-                        
-
                         records.FileCopiedEventHandler += OnFileCopied;
 
                         var recordCount = records.ESpeedRecords.Count(c => c.IsValid()).ToString().PadLeft(5, '0');
@@ -45,19 +44,13 @@ namespace ExportProcess
 
                         Console.WriteLine("Committing changes to database");
 
-                      
-                        if (!testing)
-                        {
-                            
-                       
                         records.UpdateStatus();
 
 
                         SendCompleteNotification(zipFile);
-
-
+                        
                         SubmitInvalidFileLog(records);
-                        }
+                        
                     }
                     else
                     {
@@ -80,23 +73,62 @@ namespace ExportProcess
 
         }
 
-     
+        private static void TestConvertingPdfToTiff()
+        {
+            var file = @"C:\Users\bdarley\Google Drive\Claim_Files_Details.pdf";
+            //var file = @"C:\Users\bdarley\Google Drive\_obj_2_D1700_478_PROB.pdf";
+            var arrBytes = TiffConversion.ExtractMultiTiffDocumentsToByteArray(file);
+            File.WriteAllBytes(@"C:\Users\bdarley\Google Drive\Foo.pdf", arrBytes);
+            
 
 
+        }
 
+        private static void TestReadingPdfToFile()
+        {
+            var obj = new Records();
+            var arrBytes = obj.LoadFileToByteArray(@"C:\Users\bdarley\Google Drive\_obj_2_D1700_478_PROB.pdf");
+            File.WriteAllBytes(@"C:\Users\bdarley\Google Drive\Foo.pdf", arrBytes);
+            
+        }
 
+        private static void TestConvertingPdfToTiffWithAspose()
+        {
+            var lic = new License();
+            lic.SetLicense("Aspose.Total.lic");
+            
+            //var ass = 
+            var file = @"C:\Users\bdarley\Google Drive\_obj_2_D1700_478_PROB.pdf";
+            var output = @"C:\Users\bdarley\Google Drive\output.tff";
+            Document pdfDocument = new Document(file);
 
+            // Create Resolution object
+            Resolution resolution = new Resolution(300);
 
+            // Create TiffSettings object
+            TiffSettings tiffSettings = new TiffSettings();
+            tiffSettings.Compression = CompressionType.None;
+            tiffSettings.Depth = ColorDepth.Default;
+            tiffSettings.Shape = ShapeType.Landscape;
+            tiffSettings.SkipBlankPages = false;
 
+            // Create TIFF device
+            TiffDevice tiffDevice = new TiffDevice(resolution, tiffSettings);
+
+            // Convert a particular page and save the image to stream
+            tiffDevice.Process(pdfDocument, output);
+
+        }
         private static void SubmitZipFileToVendorViaFtp(string zipFile)
         {
             var ftp = RetrieveInitializedFtpObject();
+            if (ftp == null) return;
             ftp.Connect();
 
             ftp.RemoteDir = ConfigurationManager.AppSettings["FTPDestinationFolder"];
-            ftp.LocalDir = System.IO.Path.GetDirectoryName(zipFile);
+            ftp.LocalDir = Path.GetDirectoryName(zipFile);
 
-            ftp.Upload(System.IO.Path.GetFileName(zipFile));
+            ftp.Upload(Path.GetFileName(zipFile));
 
             ftp.Disconnect();
             if (DebugFtp())
@@ -108,7 +140,7 @@ namespace ExportProcess
 
 
 
-        private static void AddSourceControlFileToZipFile(ESpeed.Records records, string zipFileName)
+        private static void AddSourceControlFileToZipFile(Records records, string zipFileName)
         {
             var zipFile = new Ionic.Zip.ZipFile(zipFileName);
 
@@ -117,7 +149,7 @@ namespace ExportProcess
             zipFile.Save();
         }
 
-        private static void AddRecordsToZipFile(ESpeed.Records records, string zipFileName)
+        private static void AddRecordsToZipFile(Records records, string zipFileName)
         {
             records.AddSourceFilesToZipArchive(zipFileName);
         }
@@ -125,7 +157,7 @@ namespace ExportProcess
         private static string GetZipFileName(string recordCount)
         {
             var path = ConfigurationManager.AppSettings["Outputfolder"];
-            return System.IO.Path.Combine(path, string.Format("PBM-JECO-{0}{1}.zip", DateTime.Now.ToString("yyyyMMdd"), recordCount));
+            return Path.Combine(path, string.Format("PBM-JECO-{0}{1}.zip", DateTime.Now.ToString("yyyyMMdd"), recordCount));
         }
 
         static void OnFileCopied(object sender, EventArgs e)
@@ -140,7 +172,10 @@ namespace ExportProcess
             var host = ConfigurationManager.AppSettings["FTP:Address"];
             var user = ConfigurationManager.AppSettings["FTP:UserId"];
             var pwd = ConfigurationManager.AppSettings["FTP:Password"];
-
+            if (string.IsNullOrEmpty(host))
+            {
+                return null;
+            }
             var ftp = new Ftp(host, user, pwd)
                       {
                           LicenseKey = ConfigurationManager.AppSettings["FTP:SFTP_License"],
@@ -150,8 +185,8 @@ namespace ExportProcess
                       };
             if (DebugFtp())
             {
-                var path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                ftp.DebugStream = System.IO.File.CreateText(System.IO.Path.Combine(path, "FTP_DEBUG.LOG"));
+                var path = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                ftp.DebugStream = File.CreateText(Path.Combine(path, "FTP_DEBUG.LOG"));
             }
 
             return ftp;
@@ -213,6 +248,7 @@ namespace ExportProcess
 
         private static void SendEmailNotification(string subject, string messageBody)
         {
+            if (string.IsNullOrEmpty(ConfigurationManager.AppSettings["emailAuthenPWD"])) return;
             var smtp = new System.Net.Mail.SmtpClient("shire")
                          {
                              Credentials = new NetworkCredential(ConfigurationManager.AppSettings["emailAuthenPWD"], ConfigurationManager.AppSettings["emailAuthenUID"])

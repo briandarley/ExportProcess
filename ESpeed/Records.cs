@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.IO;
 using System.Linq;
 using ExportProcess.Utilities;
 
@@ -24,9 +25,21 @@ namespace ExportProcess.ESpeed
 
         #endregion //Criteria
 
+        public class MockCriteria : Criteria
+        {
+            public MockCriteria(Types.DocStatusTypes docStatus) : base(docStatus)
+            {
+            }
+
+
+        }
         #region Methods 
         public static Records GetRecords(Criteria criteria)
         {
+            if (criteria.GetType() == typeof (MockCriteria))
+            {
+                return Data.GetMockRecords(criteria);
+            }
           return Data.GetRecords(criteria);
         }
 
@@ -64,17 +77,20 @@ namespace ExportProcess.ESpeed
                 foreach (var record in ESpeedRecords.Where(c => c.IsValid()))
                 {
 
-                    if (!System.IO.File.Exists(record.Pointertosource))
+                    if (!File.Exists(record.Pointertosource))
                     {
                         if (badFiles == null) badFiles = new List<Record>();
                         badFiles.Add(record);
                     }
                     else
                     {
+                        //var fileContents = record.Pointertosource.IsTiff() 
+                        //    ? TiffConversion.ExtractMultiTiffDocumentsToByteArray(record.Pointertosource) 
+                        //    : File.ReadAllBytes(record.Pointertosource);
                         var fileContents = record.Pointertosource.IsTiff() 
-                            ? TiffConversion.ConvertTiff(record.Pointertosource) 
-                            : System.IO.File.ReadAllBytes(record.Pointertosource);
-
+                            ? TiffConversion.ExtractMultiTiffDocumentsToByteArray(record.Pointertosource)
+                            : TiffConversion.ConvertPdfToByteArray(record.Pointertosource);
+                        
                         zipFile.AddEntry(record.FileName, fileContents);
                     }
                     FileCopiedEventHandler(this, EventArgs.Empty);
@@ -91,20 +107,51 @@ namespace ExportProcess.ESpeed
                 ESpeedRecords.Remove(record);
         }
 
+        void LoadStreamToStream(Stream inputStream, Stream outputStream)
+        {
+            const int bufferSize = 64 * 1024;
+            var buffer = new byte[bufferSize];
+
+            while (true)
+            {
+                var bytesRead = inputStream.Read(buffer, 0, bufferSize);
+                if (bytesRead > 0)
+                {
+                    outputStream.Write(buffer, 0, bytesRead);
+                }
+                if ((bytesRead == 0) || (bytesRead < bufferSize))
+                    break;
+            }
+        }
+
+        public byte[] LoadFileToByteArray(string inputFile)
+        {
+            byte[] result;
+            using (var streamInput = new FileStream(inputFile, FileMode.Open, FileAccess.Read))
+            {
+                var mem = new MemoryStream();
+                LoadStreamToStream(streamInput, mem);
+                mem.Position = 0;
+                result = mem.ToArray();
+                streamInput.Close();
+            }
+            return result;
+        }
+
 
         public void CopyImages(string path)
         {
             List<Record> badFiles = null;
             foreach (var record in ESpeedRecords)
             {
-                if (!System.IO.File.Exists(record.Pointertosource))
+                if (!File.Exists(record.Pointertosource))
                 {
                     if (badFiles == null) badFiles = new List<Record>();
                     badFiles.Add(record);
                 }
                 else
                 {
-                    System.IO.File.Copy(record.Pointertosource, System.IO.Path.Combine(path, record.FileName), true);
+                    File.Copy(record.Pointertosource, Path.Combine(path, record.FileName), true);
                 }
                 FileCopiedEventHandler(this, EventArgs.Empty);
             }
@@ -158,6 +205,19 @@ namespace ExportProcess.ESpeed
                     dr.Close();
                 }
 
+                return result;
+            }
+
+            public static Records GetMockRecords(Criteria criteria)
+            {
+                var result = new Records();
+                result.ESpeedRecords =new List<Record>();
+                result.ESpeedRecords.Add(new Record
+                {
+                    IdxRxBillId = "FakeRxBillId",
+                    Pointertosource = @"D:\Google Drive\_obj_2_D1754_971.pdf",
+                    IsMock = true
+                });
                 return result;
             }
         }
