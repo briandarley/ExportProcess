@@ -100,7 +100,7 @@ namespace ExportProcess.Utilities
             var pdfDocument = new Document(sourceFile);
 
             // Create Resolution object
-            var resolution = new Resolution(150);
+            var resolution = new Resolution(200);
 
             // Create TiffSettings object
             var tiffSettings = new TiffSettings
@@ -115,7 +115,7 @@ namespace ExportProcess.Utilities
             var tiffDevice = new TiffDevice(resolution, tiffSettings);
             
 
-            byte[] results = null;
+            byte[] results;
             using (var mem = new MemoryStream())
             {
                 tiffDevice.Process(pdfDocument, mem);
