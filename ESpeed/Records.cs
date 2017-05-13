@@ -188,8 +188,8 @@ namespace ExportProcess.ESpeed
                     cn.Open();
                     var cmd = cn.CreateCommand();
 
-                    const string sql = "select * from _obj_2 "
-                                       + " where IDX_DOC_STATUS = @IDX_DOC_STATUS and status != 'X' ";
+                    const string sql = @"select * from _obj_2 
+                                         where IDX_DOC_STATUS = @IDX_DOC_STATUS and status != 'X' and STATUS = 'E' ";
                     cmd.CommandText = sql;
                     cmd.Parameters.AddWithValue("@IDX_DOC_STATUS", criteria.DocStatus.GetDescription());
 
