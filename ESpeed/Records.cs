@@ -69,7 +69,7 @@ namespace ExportProcess.ESpeed
 
         public void AddSourceFilesToZipArchive(string fileName)
         {
-
+            var allowedFileTypes = new[] {".TIFF", ".PDF"};
             List<Record> badFiles = null;
             var zipFile = new Ionic.Zip.ZipFile(fileName);
             try
@@ -84,18 +84,43 @@ namespace ExportProcess.ESpeed
                     }
                     else
                     {
+                        if (!allowedFileTypes.Contains(Path.GetExtension(record.Pointertosource.ToUpper())))
+                        {
+                            Program.log.Warn($"File type not supported, file {record.Pointertosource}");
+                            if (badFiles == null) badFiles = new List<Record>();
+                            badFiles.Add(record);
+                            continue;
+                        }
                         //var fileContents = record.Pointertosource.IsTiff() 
                         //    ? TiffConversion.ExtractMultiTiffDocumentsToByteArray(record.Pointertosource) 
                         //    : File.ReadAllBytes(record.Pointertosource);
-                        var fileContents = record.Pointertosource.IsTiff() 
-                            ? TiffConversion.ExtractMultiTiffDocumentsToByteArray(record.Pointertosource)
-                            : TiffConversion.ConvertPdfToByteArray(record.Pointertosource);
-                        
-                        zipFile.AddEntry(record.FileName, fileContents);
+                        byte[] fileContents = null;
+                        if (record.Pointertosource.IsTiff())
+                        {
+                            fileContents = TiffConversion.ExtractMultiTiffDocumentsToByteArray(record.Pointertosource);
+                        }
+                        else if (record.Pointertosource.IsJpg())
+                        {
+                            fileContents = TiffConversion.ConvertJpgToPdfToByteArray(record.Pointertosource);
+                        }
+                        else
+                        {
+                            fileContents = TiffConversion.ConvertPdfToByteArray(record.Pointertosource);
+                        }
+
+                            
+                        if(fileContents != null)
+                        {
+                            zipFile.AddEntry(record.FileName, fileContents);
+                        }
                     }
                     FileCopiedEventHandler(this, EventArgs.Empty);
 
                 }
+            }
+            catch (Exception ex)
+            {
+                throw;
             }
             finally
             {

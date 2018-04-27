@@ -11,6 +11,7 @@ namespace ExportProcess.ESpeed
         {
             [Description("Approved-RVWD")] ApprovedRVWD,
             [Description("HealthE_Waiting")] HealthE_Waiting,
+            [Description("Healthe_Hold")] Healthe_Hold,
             [Description("HealthE_Sent")] HealthE_Sent,
             [Description("Process Started")] ProcessStarted,
             [Description("Rx Review")] RxReview 

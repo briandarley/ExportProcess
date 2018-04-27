@@ -150,6 +150,15 @@ namespace ExportProcess.Utilities
             sw.Close();
         }
 
+        public static bool IsJpg(this string fileName)
+        {
+            if (!Path.HasExtension(fileName)) return false;
+            var extension = Path.GetExtension(fileName);
+            if (string.IsNullOrEmpty(extension)) return false;
+            extension = extension.ToLower();
+            extension = System.Text.RegularExpressions.Regex.Replace(extension, @"^\.", "");
+            return extension == "jpg";
+        }
         public static bool IsTiff(this string fileName)
         {
             if (!Path.HasExtension(fileName)) return false;

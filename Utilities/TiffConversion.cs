@@ -1,7 +1,9 @@
 ﻿using System.IO;
+using System.Net.Mail;
 using Aspose.Pdf;
 using Aspose.Pdf.Devices;
 using BitMiracle.LibTiff.Classic;
+
 
 namespace ExportProcess.Utilities
 {
@@ -104,16 +106,16 @@ namespace ExportProcess.Utilities
 
             // Create TiffSettings object
             var tiffSettings = new TiffSettings
-                               {
-                                   Compression = CompressionType.CCITT4,
-                                   Depth = ColorDepth.Default,
-                                   Shape = ShapeType.Portait,
-                                   SkipBlankPages = false
-                               };
+            {
+                Compression = CompressionType.CCITT4,
+                Depth = ColorDepth.Default,
+                Shape = ShapeType.Portait,
+                SkipBlankPages = false
+            };
 
             // Create TIFF device
             var tiffDevice = new TiffDevice(resolution, tiffSettings);
-            
+
 
             byte[] results;
             using (var mem = new MemoryStream())
@@ -124,7 +126,50 @@ namespace ExportProcess.Utilities
             }
 
             return results;
+
+        }
+
+        public static byte[] ConvertJpgToPdfToByteArray(string sourceFile)
+        {
+            byte[] results = null;
+            var document = new iTextSharp.text.Document();
             
+            using (var mem = new FileStream("z:\\test.pdf", FileMode.Create, FileAccess.Write, FileShare.None))
+            //using (var mem = new MemoryStream())
+            {
+                iTextSharp.text.pdf.PdfWriter.GetInstance(document, mem);
+                document.Open();
+                using (var imageStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    var image = iTextSharp.text.Image.GetInstance(imageStream);
+                    if (image.Height > image.Width)
+                    {
+                        //Maximum height is 800 pixels.
+                        float percentage = 0.0f;
+                        percentage = 700 / image.Height;
+                        image.ScalePercent(percentage * 100);
+                    }
+                    else
+                    {
+                        //Maximum width is 600 pixels.
+                        float percentage = 0.0f;
+                        percentage = 540 / image.Width;
+                        image.ScalePercent(percentage * 100);
+                    }
+
+
+                    image.ScaleToFitHeight = true;
+                    document.Add(image);
+                    
+
+                }
+                //mem.Position = 0;
+                //results = mem.ToArray();
+                document.Close();
+            }
+
+
+            return results;
         }
     }
 }

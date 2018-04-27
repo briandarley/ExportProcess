@@ -157,3 +157,5 @@ $RECYCLE.BIN/
 
 
 *.config
+/.vs/ExportProcess/v15/Server/sqlite3
+/packages

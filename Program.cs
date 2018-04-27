@@ -9,19 +9,24 @@ using Aspose.Pdf.Devices;
 using ExportProcess.ESpeed;
 using ExportProcess.Utilities;
 using Jscape.Ftp;
-
+using log4net;
 
 
 namespace ExportProcess
 {
     class Program
     {
+
+        public static readonly ILog log = LogManager.GetLogger(typeof(Program));
         static void Main(string[] args)
         {
+            log4net.Config.XmlConfigurator.Configure();
+            
+            
             try
             {
-                //var records = Records.GetRecords(new Records.MockCriteria(Types.DocStatusTypes.HealthE_Waiting));
                 var records = Records.GetRecords(new Records.Criteria(Types.DocStatusTypes.HealthE_Waiting));
+                //var records = Records.GetRecords(new Records.Criteria(Types.DocStatusTypes.Healthe_Hold));
                 
                 if (records != null && records.ESpeedRecords != null)
                 {
@@ -32,17 +37,21 @@ namespace ExportProcess
                         var recordCount = records.ESpeedRecords.Count(c => c.IsValid()).ToString().PadLeft(5, '0');
                         var zipFile = GetZipFileName(recordCount);
 
-                        Console.WriteLine("Adding records to zipped file");
+                        log.Info($"Adding records to zipped file, {records.ESpeedRecords.Count}");
+                        //Console.WriteLine("Adding records to zipped file");
                         AddRecordsToZipFile(records, zipFile);
 
-                        Console.WriteLine("Adding control file to zip file");
+                        log.Info("Adding control file to zip file");
+                        //Console.WriteLine("Adding control file to zip file");
                         AddSourceControlFileToZipFile(records, zipFile);
 
-                        Console.WriteLine("Submitting zipped file to FTP");
+                        log.Info("Submitting zipped file to FTP");
+                        //Console.WriteLine("Submitting zipped file to FTP");
                         SubmitZipFileToVendorViaFtp(zipFile);
 
 
-                        Console.WriteLine("Committing changes to database");
+                        log.Info("Committing changes to database");
+                        //Console.WriteLine("Committing changes to database");
 
                         records.UpdateStatus();
 
@@ -54,14 +63,18 @@ namespace ExportProcess
                     }
                     else
                     {
-                        Console.WriteLine("No valid records to submit");
+                        
+                        log.Warn("No valid records to submit");
+                        //Console.WriteLine("No valid records to submit");
 
                     }
-                    Console.WriteLine("\nDone copying files");
+                    log.Info("\nDone copying files");
+                    //Console.WriteLine("\nDone copying files");
                 }
                 else
                 {
-                    Console.WriteLine("Process Ran Successfully, there were no files to process");
+                    log.Info("Process Ran Successfully, there were no files to process");
+                    //Console.WriteLine("Process Ran Successfully, there were no files to process");
                 }
 
             }
@@ -163,6 +176,7 @@ namespace ExportProcess
         static void OnFileCopied(object sender, EventArgs e)
         {
             Console.Write(".");
+
         }
 
         private static Ftp RetrieveInitializedFtpObject()
